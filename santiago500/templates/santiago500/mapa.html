@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smog en Santiago</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    :root {
+      --bg: #f6f7f5;
+      --ink: #1d2320;
+      --muted: #5b6661;
+      --line: #d9ddd9;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex; flex-direction: column;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg); color: var(--ink);
+    }
+    header {
+      padding: 12px 16px; border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 12px; flex-wrap: wrap;
+    }
+    h1 { font-size: 1.15rem; margin: 0; }
+    #estado { font-size: .85rem; color: var(--muted); }
+    #estado.error { color: #b3261e; }
+    #mapa { flex: 1; min-height: 0; }
+
+    .pin {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: grid; place-items: center;
+      font-weight: 700; font-size: .8rem;
+      border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35);
+    }
+    .leyenda {
+      background: #fff; padding: 8px 10px; border-radius: 6px;
+      font-size: .78rem; line-height: 1.5; box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+    .leyenda i {
+      display: inline-block; width: 12px; height: 12px;
+      border-radius: 50%; margin-right: 6px; vertical-align: -1px;
+    }
+    .popup-nombre { font-weight: 600; margin-bottom: 2px; }
+    .popup-meta { color: var(--muted); font-size: .8rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Calidad del aire en Santiago</h1>
+    <span id="estado">Cargando datos...</span>
+  </header>
+  <div id="mapa"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Categorías AQI (escala EPA): [máximo, color, texto del número, nombre]
+    const NIVELES = [
+      [50,  "#2e9e5b", "#fff", "Bueno"],
+      [100, "#f4d03f", "#222", "Moderado"],
+      [150, "#f39c34", "#222", "Dañino para grupos sensibles"],
+      [200, "#d6334a", "#fff", "Dañino"],
+      [300, "#7b2d8e", "#fff", "Muy dañino"],
+      [Infinity, "#6e1423", "#fff", "Peligroso"],
+    ];
+    const nivel = aqi => NIVELES.find(n => aqi <= n[0]);
+
+    const esc = s => String(s).replace(/[&<>"']/g, c => (
+      {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]
+    ));
+
+    const mapa = L.map("mapa").setView([-33.45, -70.66], 11);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap | Datos: WAQI",
+    }).addTo(mapa);
+
+    // Leyenda
+    const leyenda = L.control({ position: "bottomright" });
+    leyenda.onAdd = () => {
+      const div = L.DomUtil.create("div", "leyenda");
+      div.innerHTML = NIVELES.map((n, i) => {
+        const desde = i === 0 ? 0 : NIVELES[i - 1][0] + 1;
+        const rango = n[0] === Infinity ? `${desde}+` : `${desde}-${n[0]}`;
+        return `<div><i style="background:${n[1]}"></i>${rango} ${n[3]}</div>`;
+      }).join("");
+      return div;
+    };
+    leyenda.addTo(mapa);
+
+    const capa = L.layerGroup().addTo(mapa);
+    const estado = document.getElementById("estado");
+
+    async function cargar() {
+      try {
+        const resp = await fetch("{% url 'api_estaciones' %}");
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const data = await resp.json();
+
+        capa.clearLayers();
+        data.estaciones.forEach(e => {
+          const [, fondo, texto, nombreNivel] = nivel(e.aqi);
+          const icono = L.divIcon({
+            className: "",
+            html: `<div class="pin" style="background:${fondo};color:${texto}">${e.aqi}</div>`,
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+          });
+          L.marker([e.lat, e.lon], { icon: icono })
+            .bindPopup(
+              `<div class="popup-nombre">${esc(e.nombre)}</div>` +
+              `<div>AQI ${e.aqi}: ${nombreNivel}</div>` +
+              `<div class="popup-meta">Medido ${esc(e.medido_en)}</div>`
+            )
+            .addTo(capa);
+        });
+
+        if (data.estaciones.length === 0) {
+          estado.className = "error";
+          estado.textContent = "No hay datos disponibles todavía.";
+        } else if (data.aviso) {
+          estado.className = "error";
+          estado.textContent = "No se pudo actualizar, mostrando los últimos datos guardados.";
+        } else {
+          estado.className = "";
+          estado.textContent = `${data.estaciones.length} estaciones. Actualizado ${new Date().toLocaleTimeString("es-CL", {hour: "2-digit", minute: "2-digit"})}`;
+        }
+      } catch (err) {
+        estado.className = "error";
+        estado.textContent = "No se pudo cargar el mapa. Reintentando en 10 minutos.";
+      }
+    }
+
+    cargar();
+    setInterval(cargar, 10 * 60 * 1000);
+  </script>
+</body>
+</html>
