@@ -1,155 +1,287 @@
 # Santiago500 sin smog
 
-Aplicación web que muestra la calidad del aire en las comunas del Gran Santiago sobre un mapa interactivo. Cada comuna se pinta con el color de su nivel de contaminación (índice AQI) y muestra el valor en el centro.
+**Conoce el aire que respiras.**
 
-Proyecto para el curso **IWG400 Proyecto Inicial**, Universidad Técnica Federico Santa María.
+Aplicación web en español para explorar la calidad del aire en las **34 comunas del Gran Santiago** y consultar orientación de salud según el índice AQI y distintos grupos de riesgo.
 
-![Mapa de calidad del aire por comuna](docs/mapa.png)
+**[Abrir la aplicación](https://vescoar.pythonanywhere.com/)** · [Repositorio](https://github.com/vescoar/santiago500)
 
-## Qué hace
+Proyecto desarrollado para **IWG400 — Proyecto Inicial**, Universidad Técnica Federico Santa María.
 
-- Mapa de Santiago con las 34 comunas del Gran Santiago coloreadas según su AQI.
-- Número de AQI en el centro de cada comuna (aparece al acercar el zoom, para que no se amontonen).
-- Selección de comuna desde el mapa o un selector accesible con teclado. La comuna queda resaltada y su ficha muestra nombre, AQI, categoría y fecha del dato.
-- Panel «Tu salud, primero»: orientación en español según el AQI y los grupos seleccionados (asma o afecciones respiratorias, infancia, personas mayores, embarazo, enfermedades cardiovasculares y ejercicio exterior). Permite combinar grupos y limpiar la selección; sin selecciones, orienta a la población general.
-- Interfaz adaptable a computador, tablet y celular, con leyenda fuera del mapa, acceso directo a las recomendaciones y una guía breve para interpretar los datos.
-- Vista inicial centrada en el área urbana; «Ver todo» muestra los límites completos de las comunas. El botón «Actualizar» permite volver a consultar los datos respetando la caché del servidor.
-- Leyenda con las categorías de la escala AQI de la EPA, de "Bueno" a "Peligroso".
-- Los datos se guardan en base de datos y se refrescan automáticamente cada 10 minutos.
-- Si la API externa falla, el mapa sigue mostrando los últimos datos guardados y avisa del problema.
+[![Mapa de calidad del aire con Santiago seleccionado y su panel de orientación de salud](docs/mapa.png)](https://vescoar.pythonanywhere.com/)
 
-## Tecnologías
+*Vista de la aplicación. Haz clic en la imagen para explorar el mapa; los valores mostrados corresponden al momento de la captura.*
 
-| Parte | Herramienta |
-|---|---|
-| Backend | Python y Django |
-| Base de datos | SQLite |
-| Mapa | Leaflet con teselas de OpenStreetMap |
-| Datos de calidad del aire | API de Open-Meteo (Air Quality) |
-| Límites de comunas | GeoJSON de [fcortes/Chile-GeoJSON](https://github.com/fcortes/Chile-GeoJSON) |
+## Propósito
+
+Acercar la información de calidad del aire a las personas y ayudar a interpretar lo que significa para sus actividades cotidianas. El mapa permite consultar una comuna y conectar su nivel de contaminación con orientación general de salud.
+
+Los valores provienen de un modelo atmosférico de Open-Meteo. **No son mediciones de estaciones locales ni reemplazan la información oficial o una evaluación médica.**
+
+## Cómo usar la aplicación
+
+1. Elige una comuna haciendo clic en el mapa o usando el selector.
+2. Consulta su AQI, categoría y fecha del dato en la ficha lateral.
+3. Marca los grupos que correspondan para adaptar la orientación. Puedes combinar varios; sin selecciones, se muestra orientación para la población general.
+4. Usa **Limpiar** para restablecer los grupos y **Ver todo** para ver los límites completos de las comunas.
+
+En celular, el panel de salud aparece debajo del mapa. El enlace **Ver recomendaciones** lleva directamente a él.
+
+## Funcionalidades
+
+- **Mapa por comuna:** polígonos coloreados según el AQI, etiquetas numéricas al acercar el mapa y resaltado de la comuna elegida.
+- **Orientación de salud:** consejos para asma u otras afecciones respiratorias, niños y adolescentes, personas mayores, embarazo, enfermedades cardiovasculares y ejercicio al aire libre.
+- **Navegación accesible:** selector utilizable con teclado, categorías escritas junto a los colores e interfaz adaptable a computador, tablet y celular.
+- **Persistencia:** almacenamiento de zonas de monitoreo y registros de AQI en SQLite.
+- **Consulta periódica:** el navegador vuelve a pedir información cada 10 minutos mientras la página permanece abierta. El botón **Actualizar** permite repetir la consulta manualmente.
+- **Manejo de fallos de la fuente externa:** ante errores de consulta controlados, se devuelven los últimos registros guardados y se muestra un aviso.
+- **Administración:** consulta de zonas y registros desde el administrador de Django.
 
 ## Cómo funciona
 
-1. El navegador carga la página del mapa y pide los datos a `/api/estaciones/`.
-2. Django revisa cuándo se guardó el último registro. Si tiene más de 10 minutos, consulta Open-Meteo, que entrega el AQI actual para un punto de cada comuna.
-3. Los resultados se guardan en dos modelos: `ZonaMonitoreo` (comuna y coordenadas) y `RegistroContaminacion` (AQI y hora).
-4. El endpoint devuelve el último registro de cada comuna en JSON.
-5. El frontend une esos datos con el archivo `comunas.geojson`, pinta cada polígono según su nivel y pone el número en su centro.
+1. Django entrega la página principal y el navegador carga los límites de las comunas desde `comunas.geojson`.
+2. El navegador consulta `/api/estaciones/`.
+3. Django busca el registro guardado más recientemente. Si no existe o fue creado hace más de 10 minutos, consulta Open-Meteo con las coordenadas aproximadas de las 34 comunas.
+4. Los datos nuevos se guardan en SQLite, evitando duplicados para una misma zona y fecha del dato.
+5. El endpoint devuelve el último AQI disponible por comuna. El navegador actualiza los colores, las etiquetas y la ficha seleccionada.
+6. La orientación se calcula en el navegador según el AQI y los grupos elegidos, sin enviar esas selecciones al servidor.
 
-## Limitaciones y decisiones de diseño
+La fecha del dato y la fecha de guardado son distintas. Una consulta exitosa puede devolver un dato con una fecha ya existente y no crear registros nuevos. **No hay un proceso programado que recolecte datos cuando nadie consulta la aplicación.**
 
-- **Los datos son modelados, no mediciones de estaciones.** Open-Meteo entrega estimaciones de un modelo atmosférico. Es una buena aproximación general, pero no reemplaza las mediciones oficiales.
-- **La resolución del modelo es más gruesa que una comuna.** Por eso comunas vecinas suelen compartir el mismo valor y el mismo color.
-- **Los polígonos incluyen zonas no urbanas.** Comunas como Lo Barnechea, Las Condes o Puente Alto llegan hasta la cordillera, y el color representa un solo punto de la comuna.
-- **Por qué no usamos estaciones reales:** primero probamos la API de WAQI/AQICN con las estaciones de Santiago, pero al momento de las pruebas todas reportaban `"aqi":"-"` con datos de hacía varios días. Por eso cambiamos a Open-Meteo, que siempre entrega datos actuales.
-- Las coordenadas usadas para cada comuna son aproximadas.
-- **La orientación de salud es general.** Los textos se adaptan de las guías [EPA/AirNow de partículas](https://document.airnow.gov/air-quality-guide-for-particle-pollution.pdf) y [ozono](https://document.airnow.gov/air-quality-guide-for-ozone.pdf). Como el mapa muestra el AQI agregado y no identifica el contaminante dominante, se usan precauciones generales, sin recomendar horarios específicos. No reemplazan una evaluación médica ni el plan de acción para el asma. Los grupos elegidos se mantienen solo en la página abierta y no se envían al servidor.
+## Tecnologías
 
-## Instalación (Windows)
+| Componente | Tecnología |
+| --- | --- |
+| Servidor y administración | Python y Django |
+| Base de datos | SQLite |
+| Interfaz | HTML, CSS y JavaScript |
+| Mapa interactivo | Leaflet |
+| Mapa base | OpenStreetMap |
+| Calidad del aire | API de Open-Meteo Air Quality |
+| Límites geográficos | GeoJSON de comunas de Chile |
+| Alojamiento de la versión publicada | PythonAnywhere |
 
-Requisitos: Python 3 y Git.
+### Modelo de datos
 
-```
-git clone https://github.com/TU_USUARIO/TU_REPOSITORIO.git
-cd TU_REPOSITORIO
+| Modelo | Información almacenada |
+| --- | --- |
+| `ZonaMonitoreo` | Identificador de la zona, nombre de la comuna, latitud y longitud. |
+| `RegistroContaminacion` | Zona asociada, AQI, fecha del dato (`medido_en`) y fecha de guardado (`creado_en`). |
+
+Una zona puede tener varios registros. La combinación de zona y fecha del dato es única. La interfaz muestra el registro más reciente; el historial se conserva en la base de datos.
+
+## Instalación local
+
+Requisitos: **Python 3.12 o superior**, Git y conexión a Internet para descargar dependencias, consultar la API y cargar los recursos externos del mapa. Las versiones de los paquetes están definidas en `requirements.txt`.
+
+### Windows
+
+Desde PowerShell o el Símbolo del sistema:
+
+```powershell
+git clone https://github.com/vescoar/santiago500.git
+cd santiago500
 python -m venv venv
-venv\Scripts\activate
-pip install -r requirements.txt
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\python.exe manage.py migrate
+.\venv\Scripts\python.exe manage.py runserver
+```
+
+Se utiliza directamente el Python del entorno virtual para evitar depender de su activación en PowerShell.
+
+### Linux o macOS
+
+```bash
+git clone https://github.com/vescoar/santiago500.git
+cd santiago500
+python3 -m venv venv
+source venv/bin/activate
+python -m pip install -r requirements.txt
 python manage.py migrate
 python manage.py runserver
 ```
 
-Luego abre http://localhost:8000.
+Abre **http://127.0.0.1:8000/**. La primera consulta puede tardar unos segundos mientras se obtienen los datos.
 
-Notas:
-- Usa el **Símbolo del sistema (cmd)**. En PowerShell, la activación del entorno virtual puede estar bloqueada.
-- No hace falta ningún token ni archivo `.env` para los datos de Open-Meteo.
-- La primera carga puede demorar unos segundos, porque en ese momento se consultan los datos.
-- Para ver los datos guardados, crea un administrador con `python manage.py createsuperuser` y entra a `/admin`.
+Open-Meteo no requiere un token para esta integración. El GeoJSON ya viene incluido. La base `db.sqlite3` se crea con las migraciones y no se incluye en el repositorio.
 
-## Archivos estáticos en Vercel
+Para acceder a `/admin/`, ejecuta `python manage.py createsuperuser` usando el Python de tu entorno virtual.
 
-Con el soporte nativo de Django de Vercel, `STATIC_ROOT` activa la recopilación automática de archivos durante el despliegue. Vercel publica el contenido de `staticfiles/` en `/static/` desde su CDN. Esto incluye el CSS, los scripts, el GeoJSON y los estilos del administrador, incluso con `DEBUG=False`.
+## Despliegue en PythonAnywhere
 
-La carpeta `staticfiles/` se genera durante el build y no se sube al repositorio. Para comprobar la recopilación localmente:
+La versión publicada utiliza Django con SQLite y archivos estáticos servidos por PythonAnywhere. Para repetir el despliegue, sustituye `TU_USUARIO` por el usuario de la cuenta.
 
+### 1. Preparar el proyecto
+
+En una consola **Bash de PythonAnywhere**:
+
+```bash
+git clone https://github.com/vescoar/santiago500.git
+cd ~/santiago500
+mkvirtualenv --python=/usr/bin/python3.13 santiago500-env
+pip install -r requirements.txt
 ```
+
+### 2. Configurar la copia de producción
+
+El código del repositorio conserva configuración de desarrollo. En la copia del servidor, reemplaza las asignaciones correspondientes de `santiago500sinsmog/settings.py` por:
+
+```python
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+DEBUG = False
+ALLOWED_HOSTS = ["TU_USUARIO.pythonanywhere.com"]
+```
+
+Para generar la clave en un archivo `.env` sin mostrarla en pantalla, ejecuta desde la carpeta que contiene `manage.py`:
+
+```bash
+python -c "from pathlib import Path; import secrets; f = Path('.env').open('a'); f.write('\nDJANGO_SECRET_KEY=' + secrets.token_urlsafe(50) + '\n'); f.close()"
+```
+
+La configuración ya carga `.env` desde esa carpeta. Tanto ese archivo como la base SQLite y los archivos estáticos recopilados están excluidos del repositorio.
+
+```bash
+python manage.py migrate
 python manage.py collectstatic --noinput
+python manage.py check
 ```
 
-Después de subir cambios a la configuración, realiza un nuevo despliegue. La carpeta raíz del proyecto en Vercel debe ser la que contiene `manage.py` y `requirements.txt`.
+### 3. Crear la aplicación web
 
-Referencia: [Django en Vercel: archivos estáticos](https://vercel.com/docs/frameworks/full-stack/django#serving-static-assets).
+En **Web → Add a new web app**, selecciona **Manual configuration** y **Python 3.13**, la misma versión del entorno virtual.
 
-## Estructura del proyecto
+| Campo | Valor |
+| --- | --- |
+| Source code | `/home/TU_USUARIO/santiago500` |
+| Working directory | `/home/TU_USUARIO/santiago500` |
+| Virtualenv | `/home/TU_USUARIO/.virtualenvs/santiago500-env` |
 
+En el archivo **WSGI configuration file** enlazado desde la pestaña Web, utiliza:
+
+```python
+import os
+import sys
+
+project_path = "/home/TU_USUARIO/santiago500"
+if project_path not in sys.path:
+    sys.path.insert(0, project_path)
+
+os.environ["DJANGO_SETTINGS_MODULE"] = "santiago500sinsmog.settings"
+
+from django.core.wsgi import get_wsgi_application
+
+application = get_wsgi_application()
 ```
-santiago500sinsmog/
+
+### 4. Publicar los archivos estáticos
+
+En **Web → Static files**, añade:
+
+| URL | Directorio |
+| --- | --- |
+| `/static/` | `/home/TU_USUARIO/santiago500/staticfiles` |
+
+Pulsa **Reload**. Comprueba la página principal, `/static/santiago500/mapa.css` y `/api/estaciones/`. Ante un error, consulta **Web → Log files → Error log**.
+
+Después de actualizar estilos o scripts, vuelve a ejecutar `python manage.py collectstatic --noinput` y pulsa **Reload**. Conserva la configuración de producción al actualizar el código.
+
+Referencias: [desplegar un proyecto Django existente](https://help.pythonanywhere.com/pages/DeployExistingDjangoProject/) y [configurar archivos estáticos](https://help.pythonanywhere.com/pages/DjangoStaticFiles/).
+
+## Rutas disponibles
+
+| Ruta | Resultado |
+| --- | --- |
+| `/` | Mapa y orientación de salud. |
+| `/api/estaciones/` | JSON con `estaciones` y `aviso`. Cada entrada incluye nombre, coordenadas, AQI y fecha del dato. |
+| `/admin/` | Administración de zonas y registros; requiere una cuenta autorizada. |
+
+El nombre `/api/estaciones/` se conserva, aunque actualmente representa comunas con datos modelados y no estaciones físicas.
+
+## Estructura del repositorio
+
+```text
+santiago500/
 ├── manage.py
 ├── requirements.txt
-├── preparar_comunas.py          # genera comunas.geojson a partir de los límites de Chile
-├── santiago500sinsmog/          # configuración de Django (settings.py, urls.py)
-└── santiago500/                 # aplicación
-    ├── models.py                # ZonaMonitoreo y RegistroContaminacion
-    ├── services.py              # consulta a Open-Meteo y guardado de datos
-    ├── views.py                 # página del mapa y endpoint JSON
+├── preparar_comunas.py          # Generación del GeoJSON
+├── santiago500sinsmog/          # Configuración y entrada de Django
+├── tests/
+│   └── salud.test.cjs           # Pruebas de la lógica de orientación
+└── santiago500/                 # Aplicación principal
+    ├── models.py               # Zonas y registros de contaminación
+    ├── services.py             # Consulta a Open-Meteo y persistencia
+    ├── views.py                # Página y endpoint de datos
     ├── urls.py
     ├── admin.py
+    ├── migrations/
     ├── static/santiago500/
-    │   ├── comunas.geojson      # límites de las 34 comunas
-    │   ├── mapa.css             # diseño adaptable y estilos del mapa
-    │   ├── mapa.js              # selección, mapa y actualización de la interfaz
-    │   └── salud.js             # categorías AQI y orientación por grupo
+    │   ├── comunas.geojson     # Límites de las 34 comunas
+    │   ├── mapa.css            # Diseño adaptable
+    │   ├── mapa.js             # Interacciones y carga de datos
+    │   └── salud.js            # Categorías AQI y orientación
     └── templates/santiago500/
-        └── mapa.html            # mapa con Leaflet
+        └── mapa.html
 ```
 
-## Endpoints
+## Comprobaciones
 
-| Ruta | Descripción |
-|---|---|
-| `/` | Mapa de calidad del aire |
-| `/api/estaciones/` | Último AQI de cada comuna en JSON (`estaciones` y `aviso`) |
-| `/admin/` | Administración de Django |
+Con el entorno de Python del proyecto:
 
-## Regenerar los límites de comunas
-
-El archivo `comunas.geojson` ya viene incluido. Si necesitas regenerarlo:
-
-```
-python preparar_comunas.py
+```bash
+python manage.py check
 ```
 
-El script descarga los límites de todas las comunas de Chile y conserva solo las 34 del Gran Santiago.
+Para las pruebas de orientación, necesitas **Node.js 18 o superior**, sin instalar paquetes adicionales:
 
-## Posibles mejoras
-
-- Usar estaciones de monitoreo reales (por ejemplo, las del SINCA) cuando haya una fuente de datos confiable y de libre acceso.
-- Historial y gráficos de la evolución del AQI por comuna.
-- Alertas cuando una comuna supere un umbral.
-- Actualización programada de datos, sin depender de que alguien abra la página.
-
-## Comprobar la orientación de salud
-
-Con Node.js 18 o superior, sin instalar paquetes adicionales:
-
-```
+```bash
 node --test tests/salud.test.cjs
 ```
 
-Las pruebas verifican los límites AQI, las precauciones para grupos combinados y el rechazo de valores inválidos. Para probar la interfaz, abre el mapa, elige una comuna (con un clic o con el selector) y cambia los grupos del panel; la orientación se actualiza sin volver a consultar la API. En celular, el enlace «Ver recomendaciones» lleva a la ficha debajo del mapa.
+La suite verifica los límites de las categorías AQI, las diferencias entre población general y grupos sensibles, la combinación de perfiles y el rechazo de valores inválidos. Estas pruebas comprueban la lógica del programa; no constituyen una validación clínica.
 
-## Créditos
+Para revisar la interfaz, selecciona una comuna, combina grupos y comprueba que la orientación cambie. Prueba también **Limpiar**, el selector con teclado y el enlace móvil **Ver recomendaciones**.
 
-- Datos de calidad del aire: [Open-Meteo](https://open-meteo.com/)
-- Mapa base: © colaboradores de [OpenStreetMap](https://www.openstreetmap.org/copyright)
-- Biblioteca de mapas: [Leaflet](https://leafletjs.com/)
-- Límites de comunas: [fcortes/Chile-GeoJSON](https://github.com/fcortes/Chile-GeoJSON), basado en datos de la Biblioteca del Congreso Nacional de Chile
+### Regenerar los límites geográficos
+
+Solo es necesario si quieres reconstruir el archivo incluido:
+
+```bash
+python preparar_comunas.py
+```
+
+Ejecuta el comando desde la carpeta de `manage.py`. El script descarga los límites de Chile, filtra las 34 comunas del Gran Santiago y escribe `santiago500/static/santiago500/comunas.geojson`.
+
+## Alcance y limitaciones
+
+- **Cobertura:** las 32 comunas de la provincia de Santiago, más Puente Alto y San Bernardo.
+- **Representación aproximada:** se consulta un punto por comuna. El color de todo el polígono no representa variaciones internas y los límites pueden incluir sectores rurales o cordilleranos.
+- **Resolución del modelo:** comunas cercanas pueden tener el mismo valor. La escala visual del mapa no implica precisión a nivel de calle.
+- **Disponibilidad:** la API externa puede fallar o devolver datos con una fecha ya consultada. La ficha permite revisar la fecha del dato en hora de Santiago.
+- **Orientación general:** se adapta de las guías EPA/AirNow de partículas y ozono. No identifica el contaminante dominante ni reemplaza una evaluación médica. Las personas con asma deben seguir el plan de acción indicado por su médico.
+- **Selecciones de salud:** permanecen en la página abierta y no se guardan en la base de datos.
+- **Contaminantes:** aunque la consulta solicita también PM2.5, actualmente solo se guarda y presenta el AQI.
+
+Durante el desarrollo se evaluó WAQI/AQICN. Según las pruebas documentadas del equipo, las estaciones consultadas no entregaban valores de AQI utilizables en ese momento. Se optó por Open-Meteo, comunicando que sus datos son estimaciones.
+
+## Posibles mejoras
+
+- Recolección programada independiente de las visitas al sitio.
+- Visualización del historial de AQI por comuna.
+- Incorporación de contaminantes individuales y sus unidades.
+- Integración de mediciones oficiales cuando exista una fuente adecuada.
+
+## Fuentes y créditos
+
+- [Open-Meteo Air Quality](https://open-meteo.com/en/docs/air-quality-api): datos de calidad del aire basados en modelos CAMS.
+- [OpenStreetMap](https://www.openstreetmap.org/copyright): mapa base y sus colaboradores.
+- [Leaflet](https://leafletjs.com/): biblioteca del mapa interactivo.
+- [Chile-GeoJSON, de fcortes](https://github.com/fcortes/Chile-GeoJSON): límites comunales.
+- EPA/AirNow: guías de [contaminación por partículas](https://document.airnow.gov/air-quality-guide-for-particle-pollution.pdf) y [ozono](https://document.airnow.gov/air-quality-guide-for-ozone.pdf), utilizadas para adaptar la orientación de salud.
 
 ## Equipo
 
-Vicente Escobar
-Christian Franco
-Antonia Estrada
-Alexander Friant
-Jose Francisco Escobar
+- Vicente Escobar
+- Christian Franco
+- Antonia Estrada
+- Alexander Friant
+- Jose Francisco Escobar
