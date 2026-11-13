@@ -27,7 +27,7 @@ def api_estaciones(request):
         try:
             actualizar_datos()
         except ErrorAPI as e:
-            # Si falla, seguimos mostrando lo último que tengamos guardado
+            
             aviso = str(e)
 
     estaciones = []

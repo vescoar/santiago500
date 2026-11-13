@@ -10,8 +10,10 @@ Proyecto para el curso **IWG400 Proyecto Inicial**, Universidad Técnica Federic
 
 - Mapa de Santiago con las 34 comunas del Gran Santiago coloreadas según su AQI.
 - Número de AQI en el centro de cada comuna (aparece al acercar el zoom, para que no se amontonen).
-- Al hacer clic en una comuna: nombre, AQI, categoría y hora de la medición.
-- Panel «Cuida tu salud»: orientación en español según el AQI y los grupos seleccionados (asma o afecciones respiratorias, infancia, personas mayores, embarazo, enfermedades cardiovasculares y ejercicio exterior). Permite combinar grupos; sin selecciones, orienta a la población general.
+- Selección de comuna desde el mapa o un selector accesible con teclado. La comuna queda resaltada y su ficha muestra nombre, AQI, categoría y fecha del dato.
+- Panel «Tu salud, primero»: orientación en español según el AQI y los grupos seleccionados (asma o afecciones respiratorias, infancia, personas mayores, embarazo, enfermedades cardiovasculares y ejercicio exterior). Permite combinar grupos y limpiar la selección; sin selecciones, orienta a la población general.
+- Interfaz adaptable a computador, tablet y celular, con leyenda fuera del mapa, acceso directo a las recomendaciones y una guía breve para interpretar los datos.
+- Vista inicial centrada en el área urbana; «Ver todo» muestra los límites completos de las comunas. El botón «Actualizar» permite volver a consultar los datos respetando la caché del servidor.
 - Leyenda con las categorías de la escala AQI de la EPA, de "Bueno" a "Peligroso".
 - Los datos se guardan en base de datos y se refrescan automáticamente cada 10 minutos.
 - Si la API externa falla, el mapa sigue mostrando los últimos datos guardados y avisa del problema.
@@ -80,7 +82,10 @@ santiago500sinsmog/
     ├── urls.py
     ├── admin.py
     ├── static/santiago500/
-    │   └── comunas.geojson      # límites de las 34 comunas
+    │   ├── comunas.geojson      # límites de las 34 comunas
+    │   ├── mapa.css             # diseño adaptable y estilos del mapa
+    │   ├── mapa.js              # selección, mapa y actualización de la interfaz
+    │   └── salud.js             # categorías AQI y orientación por grupo
     └── templates/santiago500/
         └── mapa.html            # mapa con Leaflet
 ```
@@ -118,7 +123,7 @@ Con Node.js 18 o superior, sin instalar paquetes adicionales:
 node --test tests/salud.test.cjs
 ```
 
-Las pruebas verifican los límites AQI, las precauciones para grupos combinados y el rechazo de valores inválidos. Para probar la interfaz, abre el mapa, haz clic en una comuna y cambia los grupos del panel; la orientación se actualiza sin volver a consultar la API.
+Las pruebas verifican los límites AQI, las precauciones para grupos combinados y el rechazo de valores inválidos. Para probar la interfaz, abre el mapa, elige una comuna (con un clic o con el selector) y cambia los grupos del panel; la orientación se actualiza sin volver a consultar la API. En celular, el enlace «Ver recomendaciones» lleva a la ficha debajo del mapa.
 
 ## Créditos
 

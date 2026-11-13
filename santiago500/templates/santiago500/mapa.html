@@ -1,300 +1,118 @@
 {% load static %}<!DOCTYPE html>
-<html lang="es">
+<html lang="es-CL">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smog en Santiago</title>
+  <meta name="theme-color" content="#f7f8f4">
+  <meta name="description" content="Explora la calidad del aire en las comunas del Gran Santiago y encuentra orientación para cuidar tu salud.">
+  <title>Calidad del aire · Santiago500 sin smog</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <style>
-    :root {
-      --bg: #f6f7f5;
-      --ink: #1d2320;
-      --muted: #5b6661;
-      --line: #d9ddd9;
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; margin: 0; }
-    body {
-      display: flex; flex-direction: column;
-      font-family: "Segoe UI", system-ui, sans-serif;
-      background: var(--bg); color: var(--ink);
-    }
-    header {
-      padding: 12px 16px; border-bottom: 1px solid var(--line);
-      display: flex; justify-content: space-between; align-items: baseline;
-      gap: 12px; flex-wrap: wrap;
-    }
-    h1 { font-size: 1.15rem; margin: 0; }
-    #estado { font-size: .85rem; color: var(--muted); }
-    #estado.error { color: #b3261e; }
-    .contenido { display: flex; flex: 1; min-height: 0; }
-    #mapa { flex: 1; min-width: 0; min-height: 0; }
-    .salud {
-      width: 350px; flex-shrink: 0; overflow-y: auto;
-      padding: 20px; border-left: 1px solid var(--line); background: #fff;
-      font-size: .9rem; line-height: 1.5;
-    }
-    .salud h2 { font-size: 1.15rem; margin: 0 0 6px; }
-    .salud h3 { font-size: 1.05rem; margin: 0 0 8px; }
-    .salud p { margin: 0 0 12px; }
-    .salud fieldset { border: 0; padding: 0; margin: 18px 0; }
-    .salud legend { font-weight: 600; margin-bottom: 6px; }
-    .salud-ayuda, .salud-nota { color: var(--muted); font-size: .8rem; }
-    .salud-grupo { display: flex; align-items: center; gap: 8px; padding: 6px 0; cursor: pointer; }
-    .salud-grupo input { width: 18px; height: 18px; flex-shrink: 0; accent-color: #236342; }
-    .salud a { color: #236342; text-decoration: underline; }
-    .salud :focus-visible { outline: 3px solid #236342; outline-offset: 3px; }
-    .salud-resumen { border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: 6px; padding: 14px; }
-    .salud-resumen ul { padding-left: 18px; margin: 12px 0 0; }
-    .salud-resumen li + li { margin-top: 8px; }
-    .salud-aviso { color: #8a3213; font-weight: 600; }
-    .salud-nota { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
-    @media (max-width: 760px) {
-      html, body { height: auto; min-height: 100%; }
-      .contenido { flex-direction: column; }
-      #mapa { flex: none; height: 55vh; min-height: 300px; }
-      .salud { width: 100%; overflow-y: visible; border-left: 0; border-top: 1px solid var(--line); }
-    }
-
-    .etiqueta {
-      width: 40px; text-align: center;
-      font-weight: 700; font-size: .85rem; color: #111;
-      text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 3px #fff, 0 0 3px #fff;
-      pointer-events: none;
-    }
-    .leyenda {
-      background: #fff; padding: 8px 10px; border-radius: 6px;
-      font-size: .78rem; line-height: 1.5; box-shadow: 0 1px 4px rgba(0,0,0,.25);
-    }
-    .leyenda i {
-      display: inline-block; width: 12px; height: 12px;
-      border-radius: 3px; margin-right: 6px; vertical-align: -1px;
-    }
-    .popup-nombre { font-weight: 600; margin-bottom: 2px; }
-    .popup-meta { color: var(--muted); font-size: .8rem; }
-  </style>
+  <link rel="stylesheet" href="{% static 'santiago500/mapa.css' %}">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="{% static 'santiago500/salud.js' %}"></script>
+  <script defer src="{% static 'santiago500/mapa.js' %}"></script>
 </head>
 <body>
-  <header>
-    <h1>Calidad del aire por comuna, Santiago</h1>
-    <span id="estado">Cargando datos...</span>
+  <a class="saltar-contenido" href="#selector-comuna">Ir a la selección de comuna</a>
+  <svg class="iconos" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-aire" viewBox="0 0 24 24"><path d="M3 8h12a3 3 0 1 0-3-3M3 12h16a2 2 0 1 1-2 2M3 16h7a3 3 0 1 1-3 3"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-corazon" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></symbol>
+    <symbol id="i-flecha" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-recargar" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M6.1 6.1a8 8 0 0 1 13.2 3M4.7 14.9a8 8 0 0 0 13.2 3"/></symbol>
+    <symbol id="i-expandir" viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v.5"/></symbol>
+    <symbol id="i-reloj" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  </svg>
+
+  <header class="cabecera">
+    <div class="cabecera-interior">
+      <a class="marca" href="{% url 'mapa' %}" aria-label="Santiago500 sin smog, inicio">
+        <span class="marca-icono"><svg class="icono" aria-hidden="true"><use href="#i-aire"/></svg></span>
+        <span class="marca-texto">Santiago<span class="marca-numero">500</span><span class="marca-subtitulo">SIN SMOG</span></span>
+      </a>
+      <nav class="navegacion" aria-label="Navegación principal">
+        <a class="nav-activo" href="#explorar" aria-current="page">Explorar el mapa</a>
+        <a href="#guia" id="enlace-guia">Cómo funciona</a>
+      </nav>
+      <span class="ubicacion"><svg class="icono" aria-hidden="true"><use href="#i-pin"/></svg>Gran Santiago, Chile</span>
+    </div>
   </header>
-  <main class="contenido">
-    <div id="mapa" aria-label="Mapa de calidad del aire por comuna"></div>
-    <aside class="salud" aria-labelledby="salud-titulo">
-      <h2 id="salud-titulo">Cuida tu salud</h2>
-      <p>Haz clic en una comuna del mapa para ver orientación según su calidad del aire.</p>
-      <fieldset id="grupos-salud" aria-describedby="grupos-ayuda">
-        <legend>¿Para quién es la orientación?</legend>
-        <p id="grupos-ayuda" class="salud-ayuda">Puedes marcar varios grupos. Sin selecciones, se muestra orientación para la población general.</p>
-        <div id="opciones-salud"></div>
-      </fieldset>
-      <section id="salud-resultado" class="salud-resumen" aria-live="polite" aria-atomic="true" tabindex="-1">
-        <h3>Selecciona una comuna</h3>
-        <p>La recomendación aparecerá aquí.</p>
-      </section>
-      <div class="salud-nota">
-        <p>Orientación general; no reemplaza una evaluación médica. Si tienes asma, sigue el plan de acción indicado por tu médico.</p>
-        <p>El AQI mostrado es una estimación de Open-Meteo para un punto de la comuna, no una medición de una estación local.</p>
-        <p>Textos adaptados de las guías de la EPA/AirNow:
-          <a href="https://document.airnow.gov/air-quality-guide-for-particle-pollution.pdf" target="_blank" rel="noopener noreferrer">contaminación por partículas (en inglés)</a> y
-          <a href="https://document.airnow.gov/air-quality-guide-for-ozone.pdf" target="_blank" rel="noopener noreferrer">ozono (en inglés)</a>.
-        </p>
+
+  <main class="pagina" id="aplicacion" data-comunas-url="{% static 'santiago500/comunas.geojson' %}" data-estaciones-url="{% url 'api_estaciones' %}">
+    <section class="introduccion" aria-labelledby="titulo">
+      <div>
+        <p class="sobretitulo"><span></span>UN RESPIRO PARA TU DÍA</p>
+        <h1 id="titulo">Conoce el aire que respiras<span>.</span></h1>
+        <p class="introduccion-texto">La calidad del aire de tu comuna, con orientación para cuidarte.</p>
       </div>
-    </aside>
+      <div class="actualizacion">
+        <div class="estado-contenedor" data-estado="cargando"><span class="estado-punto" aria-hidden="true"></span><span id="estado" role="status">Cargando datos…</span></div>
+        <button class="boton-texto" id="actualizar" type="button" disabled><svg class="icono" aria-hidden="true"><use href="#i-recargar"/></svg><span>Actualizar</span></button>
+      </div>
+    </section>
+    <p id="aviso-mapa" class="aviso-mapa" role="status" hidden></p>
+
+    <div class="espacio-trabajo" id="explorar">
+      <section class="mapa-tarjeta" aria-labelledby="mapa-titulo">
+        <div class="mapa-cabecera">
+          <div><h2 id="mapa-titulo">Explora tu comuna</h2><span class="texto-secundario" id="cobertura">Gran Santiago</span></div>
+          <span class="etiqueta-modelo"><span aria-hidden="true"></span>Datos estimados</span>
+        </div>
+        <div class="mapa-herramientas">
+          <div class="selector-contenedor">
+            <label class="solo-lectores" for="selector-comuna">Selecciona una comuna</label>
+            <svg class="icono" aria-hidden="true"><use href="#i-pin"/></svg>
+            <select id="selector-comuna" disabled><option value="">Selecciona una comuna</option></select>
+            <svg class="icono selector-chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+          </div>
+          <button type="button" class="boton-vista" id="ver-todo" disabled aria-label="Ver todo Santiago" title="Ver todo Santiago"><svg class="icono" aria-hidden="true"><use href="#i-expandir"/></svg><span>Ver todo</span></button>
+        </div>
+        <div class="mapa-marco">
+          <div id="mapa" aria-label="Mapa interactivo de la calidad del aire. También puedes elegir una comuna con el selector."></div>
+          <div class="mapa-carga" id="mapa-carga"><span class="indicador-carga" aria-hidden="true"></span><span>Preparando el mapa…</span></div>
+          <a class="mapa-seleccion" id="comuna-enlace" href="#panel-salud" hidden><span><strong id="comuna-enlace-nombre"></strong><span>Ver recomendaciones</span></span><svg class="icono" aria-hidden="true"><use href="#i-flecha"/></svg></a>
+        </div>
+        <div class="leyenda-contenedor">
+          <div class="leyenda-titulo"><span>Índice de Calidad del Aire <abbr title="Air Quality Index">(AQI)</abbr></span><span>De menor a mayor contaminación <span aria-hidden="true">→</span></span></div>
+          <div id="leyenda" class="leyenda" aria-label="Categorías del índice de calidad del aire"></div>
+        </div>
+      </section>
+
+      <aside class="salud-tarjeta" id="panel-salud" aria-labelledby="salud-titulo" tabindex="-1">
+        <div class="salud-cabecera"><span class="icono-circulo"><svg class="icono" aria-hidden="true"><use href="#i-corazon"/></svg></span><div><h2 id="salud-titulo">Tu salud, primero</h2><p>Pequeñas decisiones para cuidarte.</p></div></div>
+        <div id="resumen-comuna" aria-live="polite" aria-atomic="true">
+          <div class="comuna-vacia"><svg class="icono" aria-hidden="true"><use href="#i-pin"/></svg><div><h3>¿Dónde estás hoy?</h3><p>Elige una comuna en el mapa o en el selector para conocer su AQI.</p></div></div>
+        </div>
+        <fieldset id="grupos-salud" aria-describedby="grupos-ayuda perfil-activo">
+          <legend>Adapta la orientación a ti</legend>
+          <div class="perfiles-ayuda"><p id="grupos-ayuda">Puedes marcar más de un grupo.</p><button class="boton-texto" id="limpiar-grupos" type="button" hidden>Limpiar</button></div>
+          <div id="opciones-salud" class="opciones-salud"></div>
+          <p id="perfil-activo" class="perfil-activo">Sin selecciones: población general.</p>
+        </fieldset>
+        <section id="salud-resultado" class="salud-resultado" aria-live="polite" aria-atomic="true" tabindex="-1">
+          <div class="consejo-vacio"><svg class="icono" aria-hidden="true"><use href="#i-aire"/></svg><p>Selecciona una comuna para ver las recomendaciones.</p></div>
+        </section>
+        <p class="salud-nota">Orientación general; no reemplaza una evaluación médica. Si tienes asma, sigue el plan de acción de tu médico.</p>
+        <details class="fuentes">
+          <summary>Sobre estas recomendaciones<svg class="icono" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+          <p>Adaptadas de las guías de la EPA/AirNow sobre <a href="https://document.airnow.gov/air-quality-guide-for-particle-pollution.pdf" target="_blank" rel="noopener noreferrer">partículas</a> y <a href="https://document.airnow.gov/air-quality-guide-for-ozone.pdf" target="_blank" rel="noopener noreferrer">ozono</a> (en inglés).</p>
+          <p>Se basan en el AQI estimado por Open-Meteo para un punto de la comuna. Las condiciones pueden variar dentro de ella.</p>
+        </details>
+      </aside>
+    </div>
+
+    <details class="guia" id="guia">
+      <summary><span class="guia-encabezado"><svg class="icono" aria-hidden="true"><use href="#i-info"/></svg><span>Un poco de contexto para leer el mapa</span></span><svg class="icono" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+      <div class="guia-contenido">
+        <div><span class="guia-numero">01</span><h3>Un número, una referencia</h3><p>El AQI resume la calidad del aire. Cuanto más alto es el valor, mayor es la contaminación. El color y la categoría te ayudan a interpretarlo.</p></div>
+        <div><span class="guia-numero">02</span><h3>Una estimación por comuna</h3><p>Open-Meteo entrega datos de un modelo atmosférico, no de estaciones locales. Comunas cercanas pueden compartir el mismo valor.</p></div>
+        <div><span class="guia-numero">03</span><h3>Mira también la fecha</h3><p>La página consulta los datos cada 10 minutos. La ficha de la comuna indica la fecha y hora del dato en Santiago. Si la consulta falla, verás un aviso.</p></div>
+      </div>
+    </details>
+    <footer class="pie-pagina"><span>Santiago500 sin smog <span class="pie-separador">/</span> Un proyecto para respirar mejor.</span><span>Datos de <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo</a> · IWG400, USM</span></footer>
   </main>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="{% static 'santiago500/salud.js' %}"></script>
-  <script>
-    const NIVELES = SaludAire.niveles;
-    const nivel = aqi => typeof aqi === "number" && Number.isFinite(aqi) && aqi >= 0
-      ? NIVELES.find(n => aqi <= n[0]) : null;
-
-    const norm = s => String(s).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    const esc = s => String(s).replace(/[&<>"']/g, c => (
-      {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]
-    ));
-
-    
-    function areaAnillo(r) {
-      let s = 0;
-      for (let i = 0; i < r.length; i++) {
-        const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length];
-        s += x1 * y2 - x2 * y1;
-      }
-      return s / 2;
-    }
-    function centroide(geom) {
-      const polis = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
-      let anillo = null, mayor = 0;
-      polis.forEach(p => {
-        const a = Math.abs(areaAnillo(p[0]));
-        if (a > mayor) { mayor = a; anillo = p[0]; }
-      });
-      const a = areaAnillo(anillo);
-      let cx = 0, cy = 0;
-      for (let i = 0; i < anillo.length; i++) {
-        const [x1, y1] = anillo[i], [x2, y2] = anillo[(i + 1) % anillo.length];
-        const cruz = x1 * y2 - x2 * y1;
-        cx += (x1 + x2) * cruz;
-        cy += (y1 + y2) * cruz;
-      }
-      return [cy / (6 * a), cx / (6 * a)]; // [lat, lon]
-    }
-
-    const mapa = L.map("mapa").setView([-33.48, -70.65], 10);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  maxZoom: 18,
-  referrerPolicy: "strict-origin-when-cross-origin",
-  attribution: "&copy; OpenStreetMap | Datos: Open-Meteo (modelo)",
-}).addTo(mapa);
-
-    
-    const leyenda = L.control({ position: "bottomright" });
-    leyenda.onAdd = () => {
-      const div = L.DomUtil.create("div", "leyenda");
-      div.innerHTML = NIVELES.map((n, i) => {
-        const desde = i === 0 ? 0 : NIVELES[i - 1][0] + 1;
-        const rango = n[0] === Infinity ? `${desde}+` : `${desde}-${n[0]}`;
-        return `<div><i style="background:${n[1]}"></i>${rango} ${n[2]}</div>`;
-      }).join("");
-      return div;
-    };
-    leyenda.addTo(mapa);
-
-    const estado = document.getElementById("estado");
-    const etiquetas = L.layerGroup();
-const ZOOM_ETIQUETAS = 10;  
-function actualizarEtiquetas() {
-  if (mapa.getZoom() >= ZOOM_ETIQUETAS) {
-    if (!mapa.hasLayer(etiquetas)) etiquetas.addTo(mapa);
-  } else if (mapa.hasLayer(etiquetas)) {
-    mapa.removeLayer(etiquetas);
-  }
-}
-mapa.on("zoomend", actualizarEtiquetas);
-actualizarEtiquetas();
-    let datos = {};          
-    let capaComunas = null;
-    let comunaSeleccionada = null;
-    let avisoDatos = null;
-    const resultadoSalud = document.getElementById("salud-resultado");
-    const gruposSalud = document.getElementById("grupos-salud");
-    document.getElementById("opciones-salud").innerHTML = SaludAire.grupos.map(g =>
-      `<label class="salud-grupo"><input type="checkbox" name="grupo-salud" value="${g.id}">${esc(g.nombre)}</label>`
-    ).join("");
-
-    function actualizarSalud() {
-      if (!comunaSeleccionada) return;
-      const e = datos[norm(comunaSeleccionada)];
-      const seleccionados = Array.from(gruposSalud.querySelectorAll("input:checked"), input => input.value);
-      const consejo = e ? SaludAire.recomendar(e.aqi, seleccionados) : null;
-      resultadoSalud.style.borderLeftColor = consejo ? consejo.color : "";
-      if (!consejo) {
-        resultadoSalud.innerHTML = `<h3>${esc(comunaSeleccionada)}</h3><p>Sin datos de AQI válidos. No hay orientación disponible para esta comuna.</p>`;
-        return;
-      }
-      resultadoSalud.innerHTML =
-        `<h3>${esc(comunaSeleccionada)}</h3>` +
-        `<p><strong>AQI ${esc(e.aqi)} · ${esc(consejo.categoria)}</strong><br>` +
-        `<span class="salud-ayuda">Fecha del dato: ${esc(e.medido_en)}</span></p>` +
-        (avisoDatos ? `<p class="salud-aviso">No se pudo actualizar. Esta orientación usa el último dato guardado; las condiciones actuales pueden ser distintas.</p>` : "") +
-        `<p class="salud-ayuda">Para: ${consejo.perfiles.map(esc).join("; ")}</p>` +
-        `<p>${esc(consejo.accion)}</p>` +
-        (consejo.consejos.length ? `<ul>${consejo.consejos.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : "");
-    }
-    gruposSalud.addEventListener("change", actualizarSalud);
-
-    const estilo = feature => {
-      const e = datos[norm(feature.properties.nombre)];
-      const n = e && nivel(e.aqi);
-      return {
-        fillColor: n ? n[1] : "#c9cdca",
-        fillOpacity: 0.72,
-        color: "#ffffff",
-        weight: 1.5,
-      };
-    };
-
-    const geoPromesa = fetch("{% static 'santiago500/comunas.geojson' %}").then(r => {
-      if (!r.ok) throw new Error("Falta comunas.geojson. Ejecuta preparar_comunas.py");
-      return r.json();
-    });
-
-    async function cargar() {
-      try {
-        const [geo, resp] = await Promise.all([geoPromesa, fetch("{% url 'api_estaciones' %}")]);
-        if (!resp.ok) throw new Error("HTTP " + resp.status);
-        const api = await resp.json();
-
-        datos = {};
-        api.estaciones.forEach(e => { datos[norm(e.nombre)] = e; });
-        avisoDatos = api.aviso;
-
-        if (!capaComunas) {
-          capaComunas = L.geoJSON(geo, {
-            style: estilo,
-            onEachFeature: (f, layer) => {
-              layer.on("mouseover", () => layer.setStyle({ weight: 3 }));
-              layer.on("mouseout", () => capaComunas.resetStyle(layer));
-              layer.on("click", () => {
-                comunaSeleccionada = f.properties.nombre;
-                actualizarSalud();
-              });
-            },
-          }).addTo(mapa);
-          mapa.fitBounds(capaComunas.getBounds());
-        }
-
-        etiquetas.clearLayers();
-        capaComunas.eachLayer(layer => {
-          const f = layer.feature;
-          const e = datos[norm(f.properties.nombre)];
-          capaComunas.resetStyle(layer);
-
-          if (!e || !nivel(e.aqi)) {
-            layer.bindPopup(`<div class="popup-nombre">${esc(f.properties.nombre)}</div><div>Sin datos</div>`);
-            return;
-          }
-          layer.bindPopup(
-            `<div class="popup-nombre">${esc(f.properties.nombre)}</div>` +
-            `<div>AQI ${e.aqi}: ${nivel(e.aqi)[2]}</div>` +
-            `<div class="popup-meta">Medido ${esc(e.medido_en)}</div>` +
-            `<a href="#salud-resultado">Ver orientación de salud</a>`
-          );
-          L.marker(centroide(f.geometry), {
-            interactive: false,
-            icon: L.divIcon({
-              className: "",
-              html: `<div class="etiqueta">${e.aqi}</div>`,
-              iconSize: [40, 20],
-              iconAnchor: [20, 10],
-            }),
-          }).addTo(etiquetas);
-        });
-        actualizarSalud();
-
-        if (api.estaciones.length === 0) {
-          estado.className = "error";
-          estado.textContent = "No hay datos disponibles todavía.";
-        } else if (api.aviso) {
-          estado.className = "error";
-          estado.textContent = "No se pudo actualizar, mostrando los últimos datos guardados.";
-        } else {
-          estado.className = "";
-          estado.textContent = `${api.estaciones.length} comunas. Actualizado ${new Date().toLocaleTimeString("es-CL", {hour: "2-digit", minute: "2-digit"})}`;
-        }
-      } catch (err) {
-        avisoDatos = true;
-        actualizarSalud();
-        estado.className = "error";
-        estado.textContent = err.message || "No se pudo cargar el mapa.";
-      }
-    }
-
-    cargar();
-    setInterval(cargar, 10 * 60 * 1000);
-  </script>
+  <noscript><p class="aviso-mapa">Activa JavaScript para explorar el mapa y ver las recomendaciones de salud.</p></noscript>
 </body>
 </html>
