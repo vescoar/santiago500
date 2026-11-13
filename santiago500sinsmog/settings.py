@@ -26,9 +26,15 @@ WAQI_TOKEN = os.environ.get("WAQI_TOKEN", "")
 SECRET_KEY = 'django-insecure-synmzy+vh&c1#24#t2q!8p7ns8o=z@3^!u4(j7y)^)3vu@ai^='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("VERCEL") != "1"
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", "santiago500.vercel.app"]
+
+# Vercel proporciona estos dominios sin https:// para cada despliegue.
+for variable in ("VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL"):
+    dominio = os.environ.get(variable, "").strip()
+    if dominio and dominio not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(dominio)
 
 
 # Application definition
