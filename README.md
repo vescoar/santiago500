@@ -11,6 +11,7 @@ Proyecto para el curso **IWG400 Proyecto Inicial**, Universidad Técnica Federic
 - Mapa de Santiago con las 34 comunas del Gran Santiago coloreadas según su AQI.
 - Número de AQI en el centro de cada comuna (aparece al acercar el zoom, para que no se amontonen).
 - Al hacer clic en una comuna: nombre, AQI, categoría y hora de la medición.
+- Panel «Cuida tu salud»: orientación en español según el AQI y los grupos seleccionados (asma o afecciones respiratorias, infancia, personas mayores, embarazo, enfermedades cardiovasculares y ejercicio exterior). Permite combinar grupos; sin selecciones, orienta a la población general.
 - Leyenda con las categorías de la escala AQI de la EPA, de "Bueno" a "Peligroso".
 - Los datos se guardan en base de datos y se refrescan automáticamente cada 10 minutos.
 - Si la API externa falla, el mapa sigue mostrando los últimos datos guardados y avisa del problema.
@@ -40,6 +41,7 @@ Proyecto para el curso **IWG400 Proyecto Inicial**, Universidad Técnica Federic
 - **Los polígonos incluyen zonas no urbanas.** Comunas como Lo Barnechea, Las Condes o Puente Alto llegan hasta la cordillera, y el color representa un solo punto de la comuna.
 - **Por qué no usamos estaciones reales:** primero probamos la API de WAQI/AQICN con las estaciones de Santiago, pero al momento de las pruebas todas reportaban `"aqi":"-"` con datos de hacía varios días. Por eso cambiamos a Open-Meteo, que siempre entrega datos actuales.
 - Las coordenadas usadas para cada comuna son aproximadas.
+- **La orientación de salud es general.** Los textos se adaptan de las guías [EPA/AirNow de partículas](https://document.airnow.gov/air-quality-guide-for-particle-pollution.pdf) y [ozono](https://document.airnow.gov/air-quality-guide-for-ozone.pdf). Como el mapa muestra el AQI agregado y no identifica el contaminante dominante, se usan precauciones generales, sin recomendar horarios específicos. No reemplazan una evaluación médica ni el plan de acción para el asma. Los grupos elegidos se mantienen solo en la página abierta y no se envían al servidor.
 
 ## Instalación (Windows)
 
@@ -107,6 +109,16 @@ El script descarga los límites de todas las comunas de Chile y conserva solo la
 - Historial y gráficos de la evolución del AQI por comuna.
 - Alertas cuando una comuna supere un umbral.
 - Actualización programada de datos, sin depender de que alguien abra la página.
+
+## Comprobar la orientación de salud
+
+Con Node.js 18 o superior, sin instalar paquetes adicionales:
+
+```
+node --test tests/salud.test.cjs
+```
+
+Las pruebas verifican los límites AQI, las precauciones para grupos combinados y el rechazo de valores inválidos. Para probar la interfaz, abre el mapa, haz clic en una comuna y cambia los grupos del panel; la orientación se actualiza sin volver a consultar la API.
 
 ## Créditos
 
