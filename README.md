@@ -67,6 +67,20 @@ Notas:
 - La primera carga puede demorar unos segundos, porque en ese momento se consultan los datos.
 - Para ver los datos guardados, crea un administrador con `python manage.py createsuperuser` y entra a `/admin`.
 
+## Archivos estáticos en Vercel
+
+Con el soporte nativo de Django de Vercel, `STATIC_ROOT` activa la recopilación automática de archivos durante el despliegue. Vercel publica el contenido de `staticfiles/` en `/static/` desde su CDN. Esto incluye el CSS, los scripts, el GeoJSON y los estilos del administrador, incluso con `DEBUG=False`.
+
+La carpeta `staticfiles/` se genera durante el build y no se sube al repositorio. Para comprobar la recopilación localmente:
+
+```
+python manage.py collectstatic --noinput
+```
+
+Después de subir cambios a la configuración, realiza un nuevo despliegue. La carpeta raíz del proyecto en Vercel debe ser la que contiene `manage.py` y `requirements.txt`.
+
+Referencia: [Django en Vercel: archivos estáticos](https://vercel.com/docs/frameworks/full-stack/django#serving-static-assets).
+
 ## Estructura del proyecto
 
 ```
