@@ -41,12 +41,12 @@ En celular, el panel de salud aparece debajo del mapa. El enlace **Ver recomenda
 
 1. Django entrega la página principal y el navegador carga los límites de las comunas desde `comunas.geojson`.
 2. El navegador consulta `/api/estaciones/`.
-3. Django busca el registro guardado más recientemente. Si no existe o fue creado hace más de 10 minutos, consulta Open-Meteo con las coordenadas aproximadas de las 34 comunas.
+3. Django revisa un estado de actualización compartido en SQLite. Si ya terminó la espera, reserva el intento y consulta Open-Meteo con las coordenadas aproximadas de las 34 comunas. Las demás peticiones reutilizan los datos guardados.
 4. Los datos nuevos se guardan en SQLite, evitando duplicados para una misma zona y fecha del dato.
 5. El endpoint devuelve el último AQI disponible por comuna. El navegador actualiza los colores, las etiquetas y la ficha seleccionada.
 6. La orientación se calcula en el navegador según el AQI y los grupos elegidos, sin enviar esas selecciones al servidor.
 
-La fecha del dato y la fecha de guardado son distintas. Una consulta exitosa puede devolver un dato con una fecha ya existente y no crear registros nuevos. **No hay un proceso programado que recolecte datos cuando nadie consulta la aplicación.**
+La fecha del dato y la fecha de guardado son distintas. Una consulta exitosa puede devolver un dato con una fecha ya existente y no crear registros nuevos; aun así se respetan 10 minutos antes de la siguiente consulta externa. Si Open-Meteo responde HTTP 429, se espera una hora o el plazo indicado por su cabecera `Retry-After` (con un mínimo de 10 minutos). El aviso y la espera se conservan entre visitas. **No hay un proceso programado que recolecte datos cuando nadie consulta la aplicación.**
 
 ## Tecnologías
 
@@ -67,6 +67,7 @@ La fecha del dato y la fecha de guardado son distintas. Una consulta exitosa pue
 | --- | --- |
 | `ZonaMonitoreo` | Identificador de la zona, nombre de la comuna, latitud y longitud. |
 | `RegistroContaminacion` | Zona asociada, AQI, fecha del dato (`medido_en`) y fecha de guardado (`creado_en`). |
+| `EstadoActualizacion` | Próximo intento permitido y aviso de la última consulta. Se utiliza un registro compartido para limitar las llamadas externas. |
 
 Una zona puede tener varios registros. La combinación de zona y fecha del dato es única. La interfaz muestra el registro más reciente; el historial se conserva en la base de datos.
 
@@ -144,6 +145,7 @@ La configuración ya carga `.env` desde esa carpeta. Tanto ese archivo como la b
 python manage.py migrate
 python manage.py collectstatic --noinput
 python manage.py check
+python manage.py test santiago500
 ```
 
 ### 3. Crear la aplicación web
@@ -237,7 +239,7 @@ Para las pruebas de orientación, necesitas **Node.js 18 o superior**, sin insta
 node --test tests/salud.test.cjs
 ```
 
-La suite verifica los límites de las categorías AQI, las diferencias entre población general y grupos sensibles, la combinación de perfiles y el rechazo de valores inválidos. Estas pruebas comprueban la lógica del programa; no constituyen una validación clínica.
+Las pruebas de Django verifican la espera entre consultas, el manejo del límite HTTP 429 y la conservación de los datos ante errores. La suite JavaScript verifica los límites de las categorías AQI, las diferencias entre población general y grupos sensibles, la combinación de perfiles y el rechazo de valores inválidos. Estas pruebas comprueban la lógica del programa; no constituyen una validación clínica.
 
 Para revisar la interfaz, selecciona una comuna, combina grupos y comprueba que la orientación cambie. Prueba también **Limpiar**, el selector con teclado y el enlace móvil **Ver recomendaciones**.
 

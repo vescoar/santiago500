@@ -247,7 +247,9 @@
       estado.parentElement.dataset.estado = avisoDatos || !disponibles ? "error" : "listo";
       if (avisoDatos) {
         estado.textContent = "Mostrando datos guardados";
-        mostrarAviso("No pudimos actualizar la calidad del aire. Mostramos los últimos datos disponibles; revisa la fecha en la ficha de tu comuna.");
+        const motivo = typeof api.aviso === "string" ? api.aviso : "No pudimos actualizar la calidad del aire.";
+        const reintento = api.proximo_intento ? ` Próximo intento permitido: ${api.proximo_intento}, hora de Santiago.` : "";
+        mostrarAviso(`${motivo}${reintento} Revisa la fecha del dato en la ficha de tu comuna.`);
       } else if (!disponibles) {
         estado.textContent = "Sin datos disponibles";
         mostrarAviso("Aún no hay datos de calidad del aire disponibles. Puedes explorar las comunas y volver a intentarlo con Actualizar.");

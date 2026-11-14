@@ -1,6 +1,13 @@
 from django.db import models
 
 
+class EstadoActualizacion(models.Model):
+    """Control compartido entre peticiones, independiente de las fechas del AQI."""
+
+    proximo_intento = models.DateTimeField(null=True, blank=True)
+    aviso = models.TextField(blank=True, default="")
+
+
 class ZonaMonitoreo(models.Model):
     uid = models.IntegerField(unique=True)  # id de la estación en WAQI
     nombre = models.CharField(max_length=200)

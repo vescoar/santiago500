@@ -1,4 +1,5 @@
 from datetime import datetime, timezone as dt_timezone
+from email.utils import parsedate_to_datetime
 
 import requests
 
@@ -50,7 +51,9 @@ ZONAS = [(i, nombre, lat, lon) for i, (nombre, lat, lon) in enumerate(COMUNAS, s
 
 
 class ErrorAPI(Exception):
-    pass
+    def __init__(self, mensaje, segundos_reintento=600):
+        super().__init__(mensaje)
+        self.segundos_reintento = segundos_reintento
 
 
 def actualizar_datos():
@@ -68,7 +71,25 @@ def actualizar_datos():
         resp.raise_for_status()
         datos = resp.json()
     except (requests.RequestException, ValueError) as e:
-        raise ErrorAPI(f"No se pudo consultar la API: {e}")
+        if isinstance(e, requests.HTTPError) and e.response is not None and e.response.status_code == 429:
+            # Respeta Retry-After si la fuente indica una espera; si no, espera una hora.
+            espera = 3600
+            cabecera = e.response.headers.get("Retry-After")
+            if cabecera:
+                try:
+                    espera = max(600, int(cabecera))
+                except ValueError:
+                    try:
+                        fecha = parsedate_to_datetime(cabecera)
+                        espera = max(600, (fecha - datetime.now(dt_timezone.utc)).total_seconds())
+                    except (TypeError, ValueError, OverflowError):
+                        pass
+            raise ErrorAPI(
+                "Open-Meteo limitó temporalmente las consultas (HTTP 429). "
+                "Mostramos los últimos datos guardados mientras esperamos para reintentar.",
+                segundos_reintento=espera,
+            ) from e
+        raise ErrorAPI("No se pudo consultar Open-Meteo. Mostramos los últimos datos guardados.") from e
 
     if isinstance(datos, dict):
         datos = [datos]
