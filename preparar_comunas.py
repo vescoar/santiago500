@@ -1,9 +1,3 @@
-"""
-Descarga los límites de las comunas de Chile y deja solo las 34 del Gran Santiago.
-Ejecutar UNA VEZ, desde la carpeta que tiene manage.py, con el venv activado:
-
-    python preparar_comunas.py
-"""
 import json
 import os
 import unicodedata
@@ -25,13 +19,11 @@ COMUNAS = [
 
 
 def norm(texto):
-    """Minúsculas y sin tildes, para comparar nombres sin problemas de ortografía."""
     sin_tildes = unicodedata.normalize("NFD", texto).encode("ascii", "ignore").decode()
     return sin_tildes.lower().strip()
 
 
 def redondear(coords):
-    """Redondea a 4 decimales (~10 m) para que el archivo pese menos."""
     if isinstance(coords[0], (int, float)):
         return [round(coords[0], 4), round(coords[1], 4)]
     return [redondear(c) for c in coords]

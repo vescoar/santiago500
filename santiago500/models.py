@@ -2,14 +2,13 @@ from django.db import models
 
 
 class EstadoActualizacion(models.Model):
-    """Control compartido entre peticiones, independiente de las fechas del AQI."""
 
     proximo_intento = models.DateTimeField(null=True, blank=True)
     aviso = models.TextField(blank=True, default="")
 
 
 class ZonaMonitoreo(models.Model):
-    uid = models.IntegerField(unique=True)  # id de la estación en WAQI
+    uid = models.IntegerField(unique=True)
     nombre = models.CharField(max_length=200)
     latitud = models.FloatField()
     longitud = models.FloatField()
@@ -27,8 +26,8 @@ class RegistroContaminacion(models.Model):
         ZonaMonitoreo, on_delete=models.CASCADE, related_name="registros"
     )
     aqi = models.IntegerField()
-    medido_en = models.DateTimeField()  # hora de la medición según la estación
-    creado_en = models.DateTimeField(auto_now_add=True)  # cuándo lo guardamos
+    medido_en = models.DateTimeField()
+    creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "registro de contaminación"

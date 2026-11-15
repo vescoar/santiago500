@@ -18,11 +18,8 @@ def mapa(request):
 
 @never_cache
 def api_estaciones(request):
-    """Último AQI por comuna, con espera persistente entre consultas externas."""
     estado, _ = EstadoActualizacion.objects.get_or_create(pk=1)
     ahora = timezone.now()
-    # Reserva el intento con una actualización condicional. Otras visitas reutilizan
-    # los datos mientras esta petición consulta la fuente, sin repetir la llamada.
     reservado = EstadoActualizacion.objects.filter(pk=estado.pk).filter(
         Q(proximo_intento__isnull=True) | Q(proximo_intento__lte=ahora)
     ).update(proximo_intento=ahora + timedelta(minutes=MINUTOS_CACHE))
@@ -35,8 +32,6 @@ def api_estaciones(request):
                 proximo_intento=timezone.now() + timedelta(seconds=e.segundos_reintento),
             )
         else:
-            # También cuenta como consulta exitosa si la API repite la misma hora
-            # y get_or_create no agrega registros nuevos.
             EstadoActualizacion.objects.filter(pk=estado.pk).update(
                 aviso="", proximo_intento=timezone.now() + timedelta(minutes=MINUTOS_CACHE),
             )
@@ -44,7 +39,7 @@ def api_estaciones(request):
 
     estaciones = []
     for zona in ZonaMonitoreo.objects.all():
-        reg = zona.registros.first()  # ordering = -medido_en
+        reg = zona.registros.first()
         if reg is None:
             continue
         estaciones.append(

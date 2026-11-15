@@ -1,6 +1,3 @@
-/* Orientación general adaptada de las guías EPA/AirNow de partículas y ozono.
- * Fuentes y límites de uso visibles en el panel del mapa.
- */
 "use strict";
 
 const SaludAire = (() => {
@@ -41,7 +38,6 @@ const SaludAire = (() => {
   ];
 
   function recomendar(aqi, seleccionados = []) {
-    // Un dato ausente o inválido nunca debe convertirse en una recomendación favorable.
     if (typeof aqi !== "number" || !Number.isFinite(aqi) || aqi < 0) return null;
     const indice = niveles.findIndex(n => aqi <= n[0]);
     const elegidos = new Set(seleccionados);
@@ -79,5 +75,4 @@ const SaludAire = (() => {
   return { niveles, grupos, recomendar };
 })();
 
-// Permite comprobar la lógica de orientación con node --test, sin dependencias.
 if (typeof module !== "undefined" && module.exports) module.exports = SaludAire;

@@ -7,8 +7,6 @@ from .models import RegistroContaminacion, ZonaMonitoreo
 
 URL = "https://air-quality-api.open-meteo.com/v1/air-quality"
 
-# Las 34 comunas del Gran Santiago (32 de la provincia de Santiago + Puente Alto y San Bernardo).
-# Coordenadas aproximadas del centro de cada comuna.
 COMUNAS = [
     ("Cerrillos", -33.4950, -70.7164),
     ("Cerro Navia", -33.4222, -70.7347),
@@ -46,7 +44,6 @@ COMUNAS = [
     ("Vitacura", -33.3830, -70.5740),
 ]
 
-# uid = posición en la lista (empezando en 1). Si agregas comunas, agrégalas al final.
 ZONAS = [(i, nombre, lat, lon) for i, (nombre, lat, lon) in enumerate(COMUNAS, start=1)]
 
 
@@ -57,7 +54,6 @@ class ErrorAPI(Exception):
 
 
 def actualizar_datos():
-    """Consulta Open-Meteo para todas las comunas y guarda lo nuevo. Devuelve cuántos registros nuevos."""
     try:
         resp = requests.get(
             URL,
@@ -72,7 +68,6 @@ def actualizar_datos():
         datos = resp.json()
     except (requests.RequestException, ValueError) as e:
         if isinstance(e, requests.HTTPError) and e.response is not None and e.response.status_code == 429:
-            # Respeta Retry-After si la fuente indica una espera; si no, espera una hora.
             espera = 3600
             cabecera = e.response.headers.get("Retry-After")
             if cabecera:
@@ -94,7 +89,6 @@ def actualizar_datos():
     if isinstance(datos, dict):
         datos = [datos]
 
-    # Borra zonas antiguas (por ejemplo las 8 estaciones de antes) que ya no están en la lista
     ZonaMonitoreo.objects.exclude(uid__in=[z[0] for z in ZONAS]).delete()
 
     nuevos = 0

@@ -1,4 +1,3 @@
-/* Interfaz del mapa. Los textos de orientación se mantienen en salud.js. */
 "use strict";
 
 (() => {
@@ -69,7 +68,6 @@
   }
   mapa.on("zoomend", actualizarVisibilidadEtiquetas);
   actualizarVisibilidadEtiquetas();
-  // El mapa debe ajustarse cuando cambia el ancho disponible o la orientación.
   new ResizeObserver(() => mapa.invalidateSize({ pan: false })).observe($("mapa"));
 
   function actualizarSalud() {
@@ -211,7 +209,6 @@
     $("ver-todo").disabled = false;
     $("cobertura").textContent = `${nombres.length} comunas del Gran Santiago`;
     cargaMapa.hidden = true;
-    // La vista inicial se concentra en el área urbana; «Ver todo» incluye los límites cordilleranos.
     mapa.fitBounds([[-33.65, -70.81], [-33.32, -70.48]], { padding: [16, 16], animate: false });
     actualizarMapa();
     return geometria;
