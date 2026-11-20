@@ -81,45 +81,49 @@
       </section>
 
       <aside class="salud-tarjeta" id="panel-salud" aria-labelledby="salud-titulo" tabindex="-1">
-  <div class="salud-cabecera"><span class="icono-circulo"><svg class="icono" aria-hidden="true"><use href="#i-corazon"/></svg></span><div><h2 id="salud-titulo">Tu salud, primero</h2><p>Pequeñas decisiones para cuidarte.</p></div></div>
-  <div id="resumen-comuna" aria-live="polite" aria-atomic="true">
-    <div class="comuna-vacia"><svg class="icono" aria-hidden="true"><use href="#i-pin"/></svg><div><h3>¿Dónde estás hoy?</h3><p>Elige una comuna en el mapa o en el selector para conocer su AQI.</p></div></div>
-  </div>
-  <fieldset id="grupos-salud" aria-describedby="grupos-ayuda perfil-activo">
-    <legend>Adapta la orientación a ti</legend>
-    <div class="perfiles-ayuda"><p id="grupos-ayuda">Puedes marcar más de un grupo.</p><button class="boton-texto" id="limpiar-grupos" type="button" hidden>Limpiar</button></div>
-    <div id="opciones-salud" class="opciones-salud"></div>
-    <p id="perfil-activo" class="perfil-activo">Sin selecciones: población general.</p>
-  </fieldset>
-  <section id="salud-resultado" class="salud-resultado" aria-live="polite" aria-atomic="true" tabindex="-1">
-    <div class="consejo-vacio"><svg class="icono" aria-hidden="true"><use href="#i-aire"/></svg><p>Selecciona una comuna para ver las recomendaciones.</p></div>
-  </section>
+        <div class="salud-cabecera"><span class="icono-circulo"><svg class="icono" aria-hidden="true"><use href="#i-corazon"/></svg></span><div><h2 id="salud-titulo">Tu salud, primero</h2><p>Pequeñas decisiones para cuidarte.</p></div></div>
+        <div id="resumen-comuna" aria-live="polite" aria-atomic="true">
+          <div class="comuna-vacia"><svg class="icono" aria-hidden="true"><use href="#i-pin"/></svg><div><h3>¿Dónde estás hoy?</h3><p>Elige una comuna en el mapa o en el selector para conocer su AQI.</p></div></div>
+        </div>
+        <fieldset id="grupos-salud" aria-describedby="grupos-ayuda perfil-activo">
+          <legend>Adapta la orientación a ti</legend>
+          <div class="perfiles-ayuda"><p id="grupos-ayuda">Puedes marcar más de un grupo.</p><button class="boton-texto" id="limpiar-grupos" type="button" hidden>Limpiar</button></div>
+          <div id="opciones-salud" class="opciones-salud"></div>
+          <p id="perfil-activo" class="perfil-activo">Sin selecciones: población general.</p>
+        </fieldset>
+        <section id="salud-resultado" class="salud-resultado" aria-live="polite" aria-atomic="true" tabindex="-1">
+          <div class="consejo-vacio"><svg class="icono" aria-hidden="true"><use href="#i-aire"/></svg><p>Selecciona una comuna para ver las recomendaciones.</p></div>
+        </section>
         
-  <div class="salud-orientacion-general" style="border-top: 1px solid #e2e8f0; margin-top: 15px; padding-top: 15px;">
-    <p class="salud-nota">Orientación general; no reemplaza una evaluación médica. Si tienes asma, sigue el plan de acción de tu médico.</p>
-    
-    <div class="video-emergencia-contenedor" style="margin: 15px 0;">
-      <p style="font-size: 0.9rem; font-weight: bold; margin-bottom: 8px; color: #1e293b;">
-         Tip de prevención: Configura el atajo rápido de emergencias en tu celular
-      </p>
-      <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%; border-radius: 8px;">
-        <iframe 
-          style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
-          src="https://youtube.com" 
-          title="Cómo configurar llamadas de emergencia en el celular" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-          allowfullscreen>
-        </iframe>
-      </div>
-    </div>
-  </div>
+        <div class="salud-orientacion-contenedor" style="border-top: 1px solid #e2e8f0; margin-top: 16px; padding-top: 16px;">
+          <p class="salud-nota" style="margin-bottom: 16px;">Orientación general; no reemplaza una evaluación médica. Si tienes asma, sigue el plan de acción de tu médico.</p>
+          
+          
+          <div class="video-emergencia-bloque" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+            <p style="font-size: 0.875rem; font-weight: 600; margin: 0 0 8px 0; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+               Prevención: Atajo rápido para emergencias
+            </p>
+            
+            <!-- Contenedor adaptado para formato vertical (aspect-ratio 9:16) óptimo para Shorts -->
+            <div style="position: relative; padding-bottom: 135%; height: 0; overflow: hidden; max-width: 320px; margin: 0 auto; border-radius: 6px; background-color: #000;">
+              <iframe 
+                style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+                src="https://youtube.com" 
+                title="Cómo activar el botón SOS de emergencia" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                allowfullscreen>
+              </iframe>
+            </div>
+          </div>
+        </div>
 
-  <details class="fuentes">
-    <summary>Sobre estas recomendaciones<svg class="icono" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
-    <p>Adaptadas de las guías de la EPA/AirNow sobre <a href="https://airnow.gov" target="_blank" rel="noopener noreferrer">partículas</a> y <a href="https://airnow.gov" target="_blank" rel="noopener noreferrer">ozono</a> (en inglés).</p>
-    <p>Se basan en el AQI estimado por Open-Meteo para un punto de la comuna. Las condiciones pueden variar dentro de ella.</p>
-  </details>
-</aside>
+        <details class="fuentes">
+          <summary>Sobre estas recomendaciones<svg class="icono" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+          <p>Adaptadas de las guías de la EPA/AirNow sobre <a href="https://airnow.gov" target="_blank" rel="noopener noreferrer">partículas</a> y <a href="https://airnow.gov" target="_blank" rel="noopener noreferrer">ozono</a> (en inglés).</p>
+          <p>Se basan en el AQI estimado por Open-Meteo para un punto de la comuna. Las condiciones pueden variar dentro de ella.</p>
+        </details>
+      </aside>
+
 
 
     <details class="guia" id="guia">
