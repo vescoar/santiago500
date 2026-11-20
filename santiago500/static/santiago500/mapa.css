@@ -234,11 +234,23 @@ details[open] > summary > .icono { transform: rotate(180deg); }
   .pie-pagina { flex-direction: column; gap: 6px; padding: 20px 0 27px; line-height: 1.7; }
   .pie-separador { margin: 0 4px; }
   .video-emergencia-bloque {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  height: auto !important;
-  overflow: visible !important;
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  padding: 12px;
+  margin: 16px auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.video-emergencia-bloque iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border: 0;
+  border-radius: 6px;
+}
 }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
