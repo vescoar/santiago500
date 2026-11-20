@@ -233,6 +233,13 @@ details[open] > summary > .icono { transform: rotate(180deg); }
   .guia-contenido { grid-template-columns: 1fr; padding: 5px 20px 24px; }
   .pie-pagina { flex-direction: column; gap: 6px; padding: 20px 0 27px; line-height: 1.7; }
   .pie-separador { margin: 0 4px; }
+  .video-emergencia-bloque {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  overflow: visible !important;
+}
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } *, *::before, *::after { animation: none !important; transition: none !important; } }
 @media (forced-colors: active) { .salud-grupo input { appearance: auto; } .salud-grupo input::after { display: none; } .salud-grupo:has(input:checked) { outline: 2px solid Highlight; } }
